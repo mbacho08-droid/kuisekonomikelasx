@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kuis Ekonomi Indonesia</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+body{font-family:Fredoka,"Trebuchet MS",sans-serif;background:linear-gradient(135deg,#fde68a,#fbcfe8 50%,#a5f3fc);min-height:100vh;color:#1e293b}
+.card{background:#fff;border-radius:1.5rem;box-shadow:0 8px 0 rgba(0,0,0,.08)}
+.btn{border-radius:1rem;font-weight:700;padding:.7rem 1.2rem;transition:transform .1s}.btn:active{transform:scale(.95)}
+.opt{display:block;width:100%;text-align:left;padding:.8rem 1rem;border-radius:1rem;border:3px solid #e2e8f0;background:#fff;font-weight:600;margin-bottom:.6rem}
+.opt:hover:not(:disabled){border-color:#8b5cf6;background:#f5f3ff}
+.pop{animation:pop .4s}@keyframes pop{0%{transform:scale(.7);opacity:0}100%{transform:scale(1);opacity:1}}
+</style></head>
+<body class="p-3"><div id="app" class="max-w-2xl mx-auto"></div>
+<script>
+// Format: soal~jawaban benar~salah1~salah2~salah3~langkah penyelesaian
+const RAW=[
+["Masalah pokok ekonomi muncul karena...~Kebutuhan manusia tak terbatas, sumber daya terbatas~Kebutuhan manusia terbatas, sumber daya melimpah~Harga barang selalu naik~Penduduk terlalu sedikit~Kelangkaan terjadi saat kebutuhan tak terbatas bertemu alat pemuas yang terbatas, sehingga kita harus memilih.",
+"Sistem ekonomi yang dianut Indonesia adalah...~Ekonomi Pancasila~Liberal murni~Komando~Tradisional~Indonesia menganut sistem ekonomi Pancasila (campuran) berlandaskan Pasal 33 UUD 1945.",
+"Dasar hukum perekonomian Indonesia terdapat pada Pasal...~33 UUD 1945~28 UUD 1945~27 UUD 1945~31 UUD 1945~Pasal 33 UUD 1945 mengatur perekonomian dan penguasaan sumber daya alam.",
+"Bapak Koperasi Indonesia adalah...~Mohammad Hatta~Soekarno~Soeharto~Ki Hajar Dewantara~Mohammad Hatta dijuluki Bapak Koperasi Indonesia.",
+"BUMN adalah singkatan dari...~Badan Usaha Milik Negara~Badan Usaha Milik Nasional~Badan Utama Milik Negara~Bank Umum Milik Negara~BUMN = Badan Usaha Milik Negara, modalnya dimiliki negara.",
+"Rumah tangga keluarga berperan sebagai...~Penyedia faktor produksi sekaligus konsumen~Hanya produsen~Pembuat undang-undang~Pencetak uang~Rumah tangga menyediakan tenaga kerja (faktor produksi) dan membeli barang/jasa (konsumen).",
+"Contoh kebutuhan primer adalah...~Beras~Mobil mewah~Liburan ke luar negeri~Perhiasan~Kebutuhan primer = pangan, sandang, papan. Beras termasuk pangan.",
+"Lembaga yang menerbitkan uang rupiah adalah...~Bank Indonesia~OJK~Kementerian Keuangan~Bank BRI~Hanya Bank Indonesia yang berwenang mengeluarkan rupiah.",
+"Kegiatan menambah nilai guna barang disebut...~Produksi~Konsumsi~Distribusi~Investasi~Menambah nilai guna barang/jasa adalah produksi.",
+"Prinsip ekonomi yang benar adalah...~Dengan pengorbanan tertentu memperoleh hasil maksimal~Mengeluarkan biaya sebanyak-banyaknya~Membeli semua barang yang diinginkan~Menghindari kegiatan produksi~Prinsip ekonomi: hasil sebesar-besarnya dengan pengorbanan sekecil-kecilnya."],
+["Ciri sistem ekonomi tradisional adalah...~Teknologi sederhana dan berdasarkan adat turun-temurun~Pemerintah mengatur seluruh produksi~Semua sumber daya milik swasta~Mengutamakan teknologi canggih~Ekonomi tradisional bertumpu pada kebiasaan dan teknologi sederhana.",
+"Ciri sistem ekonomi liberal adalah...~Kepemilikan pribadi dan mekanisme pasar bebas~Semua dikuasai negara~Tidak ada uang~Produksi diatur adat~Liberal/kapitalis menekankan hak milik pribadi dan persaingan pasar.",
+"Pada sistem ekonomi komando, keputusan ekonomi ditentukan oleh...~Pemerintah pusat~Konsumen~Pasar bebas~Perusahaan swasta~Komando = terpusat; pemerintah menentukan apa, bagaimana, dan untuk siapa barang diproduksi.",
+"Ekonomi Pancasila berlandaskan...~Pancasila dan UUD 1945~Paham individualisme~Paham komunisme~Hukum adat saja~Dasar ekonomi Pancasila adalah Pancasila dan UUD 1945 (terutama Pasal 33).",
+"Pasal 33 ayat 1 menyatakan perekonomian disusun sebagai usaha bersama berdasarkan asas...~Kekeluargaan~Persaingan~Individualisme~Keuntungan pribadi~Ayat 1: usaha bersama berdasar asas kekeluargaan.",
+"Cabang produksi yang menguasai hajat hidup orang banyak, contohnya...~Listrik dan air~Toko pakaian~Salon kecantikan~Warung kopi~Menurut Pasal 33 ayat 2, cabang vital seperti listrik dan air dikuasai negara.",
+"Koperasi yang melayani anggota menabung dan meminjam disebut...~Koperasi simpan pinjam~Koperasi produsen~Koperasi konsumen~Koperasi jasa~Kegiatan menabung dan meminjam adalah usaha koperasi simpan pinjam.",
+"BUMD adalah badan usaha milik...~Pemerintah daerah~Pemerintah pusat~Swasta asing~Koperasi~BUMD = Badan Usaha Milik Daerah.",
+"Berikut yang merupakan BUMN adalah...~Pertamina~Indomaret~Gojek~Warung Tegal~Pertamina adalah perusahaan milik negara.",
+"Harga di pasar terbentuk dari pertemuan...~Permintaan dan penawaran~Pajak dan subsidi~Impor dan ekspor~Upah dan sewa~Harga keseimbangan terjadi saat permintaan = penawaran."],
+["Kelemahan utama sistem ekonomi liberal adalah...~Kesenjangan pendapatan melebar~Tidak ada kebebasan berusaha~Produksi sepenuhnya dikuasai negara~Tidak ada persaingan~Persaingan bebas menguntungkan yang bermodal besar sehingga kesenjangan melebar.",
+"Kelemahan sistem ekonomi komando adalah...~Inisiatif dan inovasi individu rendah~Harga tak terkendali~Kesenjangan sangat tinggi~Persaingan terlalu ketat~Karena semua diatur pusat, inovasi masyarakat kurang berkembang.",
+"Sistem ekonomi campuran berarti...~Pemerintah dan swasta sama-sama berperan~Hanya swasta yang berperan~Hanya pemerintah yang berperan~Tanpa pelaku ekonomi~Campuran menggabungkan peran pasar dan campur tangan pemerintah.",
+"Tiga pelaku usaha utama menurut ekonomi Pancasila adalah...~BUMN, koperasi, dan swasta~BUMN, bank, dan asing~Koperasi, bank, dan LSM~Swasta, asing, dan LSM~Penjelasan Pasal 33: ketiga pelaku itu BUMN, koperasi, dan swasta.",
+"Lembaga yang mengawasi sektor jasa keuangan adalah...~OJK~KPK~BPS~KPPU~Otoritas Jasa Keuangan mengatur dan mengawasi bank, asuransi, dan pasar modal.",
+"Contoh sektor ekonomi primer adalah...~Pertanian~Perbankan~Pabrik mobil~Perdagangan online~Sektor primer mengambil langsung dari alam: pertanian, perikanan, pertambangan.",
+"Pertumbuhan ekonomi diukur dari...~Kenaikan PDB riil~Kenaikan harga barang~Jumlah koperasi~Banyaknya BUMN~Pertumbuhan ekonomi = peningkatan PDB riil dari tahun ke tahun.",
+"Kekuasaan tertinggi dalam koperasi berada pada...~Rapat Anggota~Pengurus~Pengawas~Pemerintah~Rapat Anggota Tahunan (RAT) adalah forum keputusan tertinggi koperasi.",
+"SHU dalam koperasi adalah...~Sisa Hasil Usaha~Simpanan Hasil Utama~Saham Hasil Umum~Sumbangan Hasil Usaha~SHU = Sisa Hasil Usaha, laba koperasi yang dibagikan ke anggota.",
+"Harga Eceran Tertinggi (HET) bertujuan...~Melindungi konsumen dari harga terlalu tinggi~Menaikkan harga produsen~Menghapus pajak~Membatasi ekspor~HET menetapkan batas atas harga agar konsumen terlindungi."],
+["Ekonomi Pancasila berbeda dari liberal karena...~Mengutamakan kekeluargaan dan keadilan sosial~Menolak peran swasta sepenuhnya~Menghapus hak milik~Tanpa campur tangan pemerintah~Pancasila menempatkan kekeluargaan dan keadilan sosial, bukan sekadar keuntungan individu.",
+"Pasal 33 ayat 3: sumber daya alam dikuasai negara untuk...~Sebesar-besarnya kemakmuran rakyat~Keuntungan perusahaan asing~Kepentingan pejabat~Dijual ke pasar bebas~Ayat 3 menegaskan tujuan penguasaan negara: kemakmuran rakyat.",
+"Asas yang ditambahkan pada Pasal 33 ayat 4 hasil amandemen adalah...~Efisiensi berkeadilan dan berwawasan lingkungan~Persaingan tanpa batas~Monopoli negara~Kepemilikan asing~Ayat 4: efisiensi berkeadilan, berkelanjutan, berwawasan lingkungan, dan kemandirian.",
+"Peran BUMN yang tepat adalah...~Mengelola sektor strategis dan menjadi sumber pendapatan negara~Menggantikan seluruh usaha swasta~Hanya mencari untung tanpa melayani publik~Menghapus koperasi~BUMN mengisi bidang strategis, membantu penerimaan negara, dan melayani publik.",
+"Menurut lapangan usaha, penyumbang terbesar PDB Indonesia umumnya adalah sektor...~Industri pengolahan~Pertambangan~Konstruksi~Jasa pendidikan~Industri pengolahan secara konsisten menjadi kontributor PDB terbesar (data BPS).",
+"Dalam koperasi, hak suara anggota adalah...~Satu orang satu suara~Sesuai besar simpanan~Sesuai jabatan~Ditentukan pengurus~Prinsip demokratis koperasi: one man one vote.",
+"SHU koperasi dibagi berdasarkan...~Jasa usaha dan simpanan anggota~Sama rata tanpa dasar~Usia anggota~Jabatan pengurus~SHU anggota dihitung dari jasa (transaksi) dan modal (simpanan) anggota.",
+"Pelaksana kebijakan moneter di Indonesia adalah...~Bank Indonesia~Kementerian Keuangan~DPR~BPS~Kebijakan moneter oleh BI, kebijakan fiskal oleh pemerintah.",
+"Contoh instrumen kebijakan fiskal adalah...~Pajak~Suku bunga acuan~Operasi pasar terbuka~Giro wajib minimum~Fiskal = pajak dan belanja pemerintah; sisanya instrumen moneter.",
+"Inflasi adalah...~Kenaikan harga umum secara terus-menerus~Kenaikan harga satu barang sesaat~Turunnya harga umum~Naiknya nilai tukar~Inflasi = kenaikan harga umum yang berlangsung terus-menerus."],
+["PDB riil tahun lalu Rp2.000 triliun, tahun ini Rp2.100 triliun. Pertumbuhan ekonominya...~5%~4%~10%~2,1%~(2.100 - 2.000) / 2.000 x 100% = 5%.",
+"IHK tahun lalu 120 dan tahun ini 126. Inflasinya...~5%~6%~4,8%~10%~(126 - 120) / 120 x 100% = 5%.",
+"Angkatan kerja 100 juta orang, yang menganggur 5 juta. Tingkat pengangguran...~5%~50%~0,5%~20%~5 juta / 100 juta x 100% = 5%.",
+"Untuk menekan inflasi, Bank Indonesia dapat...~Menaikkan suku bunga acuan~Menurunkan suku bunga acuan~Mencetak uang lebih banyak~Menurunkan pajak~Bunga naik, kredit turun, uang beredar berkurang, harga lebih terkendali.",
+"Permintaan beras naik sementara penawaran tetap, maka harga...~Naik~Turun~Tetap~Menjadi nol~Permintaan bertambah, barang terbatas, harga keseimbangan naik.",
+"PDB Rp3.000 triliun, penduduk 300 juta. PDB per kapita...~Rp10 juta~Rp1 juta~Rp100 juta~Rp9 juta~3.000.000.000.000.000 / 300.000.000 = 10.000.000.",
+"Pajak progresif berarti...~Makin tinggi penghasilan, makin tinggi tarif~Tarif sama untuk semua~Makin tinggi penghasilan, makin rendah tarif~Hanya berlaku bagi konsumsi~Tarif naik mengikuti besar penghasilan, mendukung pemerataan.",
+"Indonesia bukan liberal murni karena...~Negara menguasai cabang produksi penting (Pasal 33)~Tidak ada swasta~Tidak ada pasar~Harga ditetapkan sepenuhnya pemerintah~Pasal 33 mewajibkan negara menguasai sektor vital, jadi pasar tidak sepenuhnya bebas.",
+"Inflasi tinggi merugikan penabung karena...~Nilai riil tabungan menurun~Bunga tabungan otomatis naik~Harga turun~Uang bertambah banyak~Harga naik membuat daya beli uang tabungan turun.",
+"Defisit APBN berarti...~Belanja lebih besar dari penerimaan~Penerimaan lebih besar dari belanja~Belanja sama dengan penerimaan~Tidak ada pajak~Defisit = belanja - penerimaan > 0."],
+["Ekonomi Pancasila berbeda dari komando karena...~Mengakui hak milik pribadi dengan batas kepentingan umum~Menghapus seluruh hak milik~Seluruh produksi dikuasai negara~Tanpa peran koperasi~Pancasila tetap memberi ruang swasta, sedangkan komando menghapusnya.",
+"Kritik terhadap monopoli BUMN adalah...~Berpotensi tidak efisien karena minim persaingan~Selalu menaikkan ekspor~Menurunkan pajak~Menambah pesaing~Tanpa pesaing, dorongan menekan biaya dan berinovasi melemah.",
+"Koefisien Gini mendekati 0 berarti...~Pendapatan sangat merata~Sangat timpang~Tidak ada penduduk~PDB nol~Gini 0 = pemerataan sempurna, Gini 1 = ketimpangan sempurna.",
+"C=500, I=200, G=150, X=100, M=80. PDB menurut pendekatan pengeluaran...~870~930~850~950~Y = C + I + G + (X - M) = 500 + 200 + 150 + 20 = 870.",
+"PDB pendekatan pendapatan menjumlahkan...~Upah, sewa, bunga, dan laba~Ekspor dan impor~Konsumsi dan investasi~Pajak dan subsidi saja~Pendekatan pendapatan = balas jasa faktor produksi: upah, sewa, bunga, laba.",
+"Pergeseran dari agraris ke industri dan jasa disebut...~Transformasi struktural~Inflasi struktural~Depresiasi~Devaluasi~Perubahan peran sektor dalam PDB disebut transformasi struktural.",
+"Tujuan hilirisasi industri adalah...~Meningkatkan nilai tambah sebelum diekspor~Menambah ekspor bahan mentah~Mengurangi lapangan kerja~Menghentikan investasi~Mengolah bahan mentah di dalam negeri menaikkan nilai jual dan membuka kerja.",
+"Jika rupiah terdepresiasi, maka barang impor menjadi...~Lebih mahal~Lebih murah~Tetap~Gratis~Butuh lebih banyak rupiah untuk membeli 1 dolar, jadi harga impor naik.",
+"Saat resesi, kebijakan fiskal ekspansif adalah...~Menaikkan belanja pemerintah atau menurunkan pajak~Menaikkan pajak~Memotong belanja~Menaikkan suku bunga~Ekspansif menambah permintaan agregat untuk menggerakkan ekonomi.",
+"PPN dikenakan atas...~Konsumsi barang dan jasa~Penghasilan orang pribadi~Kepemilikan tanah~Kendaraan bermotor saja~PPN = Pajak Pertambahan Nilai atas transaksi barang/jasa; PPh atas penghasilan."],
+["HET minyak goreng ditetapkan di bawah harga keseimbangan. Dampaknya...~Kelebihan permintaan dan barang langka~Kelebihan penawaran~Harga naik otomatis~Tidak ada dampak~Harga di bawah keseimbangan: Qd > Qs, sehingga barang langka.",
+"Harga naik 10% dan jumlah diminta turun 20%. Elastisitasnya...~2 (elastis)~0,5 (inelastis)~1~10~Ed = 20% / 10% = 2 > 1, jadi elastis.",
+"MPC = 0,8. Angka pengganda investasi...~5~8~1,25~0,2~k = 1 / (1 - MPC) = 1 / 0,2 = 5.",
+"MPC = 0,75 dan investasi naik Rp40 miliar. Pendapatan naik...~Rp160 miliar~Rp30 miliar~Rp53 miliar~Rp120 miliar~k = 1 / 0,25 = 4; kenaikan = 4 x 40 = 160.",
+"Proteksi industri bayi (infant industry) bertujuan...~Melindungi industri baru hingga mampu bersaing~Menghapus semua industri lama~Menaikkan impor~Menghentikan ekspor~Industri baru dilindungi sementara agar bisa tumbuh dan bersaing.",
+"Program selaras asas pemerataan Pasal 33 adalah...~KUR untuk akses modal UMKM~Monopoli swasta penuh~Larangan koperasi~Penghapusan subsidi tanpa kompensasi~KUR memperluas akses modal pelaku kecil sehingga mendukung pemerataan.",
+"Stagflasi adalah...~Inflasi tinggi disertai stagnasi ekonomi dan pengangguran~Deflasi dan pertumbuhan tinggi~Pertumbuhan tinggi dan inflasi rendah~Harga stabil~Stagflasi = stagnasi + inflasi.",
+"Neraca perdagangan surplus bila...~Ekspor lebih besar dari impor~Impor lebih besar dari ekspor~Ekspor sama dengan impor~Tidak ada perdagangan~Surplus = nilai ekspor - impor > 0.",
+"Ketergantungan ekspor komoditas mentah berisiko...~Penerimaan terguncang oleh fluktuasi harga dunia~Harga selalu stabil~Nilai tambah meningkat~Industri berkembang pesat~Harga komoditas dunia naik-turun, sehingga pendapatan negara tidak stabil.",
+"Salah satu sumber pembiayaan defisit APBN adalah...~Penerbitan Surat Berharga Negara (SBN)~Menaikkan belanja~Menurunkan pajak~Mengurangi penerimaan~Defisit ditutup lewat pembiayaan, misalnya utang melalui SBN."],
+["PDB Rp1.000 T, pendapatan faktor dari luar negeri Rp60 T, ke luar negeri Rp40 T. PNB...~Rp1.020 T~Rp1.100 T~Rp980 T~Rp1.060 T~PNB = PDB + (diterima - dibayar) = 1.000 + (60 - 40) = 1.020.",
+"PDB nominal naik 8% dengan inflasi 3%. Pertumbuhan riil sekitar...~5%~11%~8%~24%~Riil = nominal - inflasi = 8% - 3% = 5%.",
+"Kurva Phillips menggambarkan hubungan...~Negatif antara inflasi dan pengangguran~Positif antara PDB dan pajak~Antara ekspor dan impor~Antara bunga dan tabungan saja~Kurva Phillips: inflasi turun saat pengangguran naik (jangka pendek).",
+"Salah satu penyebab krisis moneter 1997/98 adalah...~Utang valas swasta besar dan nilai tukar anjlok~Surplus APBN besar~Harga minyak sangat rendah~Ekspor melonjak~Rupiah melemah tajam sementara utang dolar swasta membengkak.",
+"Tujuan tunggal Bank Indonesia adalah...~Memelihara kestabilan nilai rupiah~Mengawasi pasar modal~Memungut pajak~Membangun jalan tol~UU BI menetapkan tujuan utama kestabilan nilai rupiah.",
+"Lembaga pengawas persaingan usaha tidak sehat adalah...~KPPU~OJK~BPK~LPS~KPPU mengawasi UU No. 5/1999 tentang larangan praktik monopoli.",
+"Efek crowding out terjadi ketika...~Utang pemerintah menaikkan bunga sehingga investasi swasta turun~Investasi swasta naik karena bunga turun~Pajak turun~Ekspor naik~Pemerintah menyerap dana, bunga naik, investasi swasta tergeser.",
+"Cadangan wajib 10%, setoran awal Rp1.000. Kreasi uang maksimum...~Rp10.000~Rp1.100~Rp900~Rp100~Pengganda = 1 / 0,1 = 10; 10 x 1.000 = 10.000.",
+"Menurut tafsir MK, dikuasai negara mencakup...~Kebijakan, pengurusan, pengaturan, pengelolaan, dan pengawasan~Hanya kepemilikan~Hanya pajak~Hanya penjualan~Penguasaan negara bukan sekadar memiliki, tetapi lima fungsi tersebut.",
+"Gini naik dari 0,38 ke 0,40 berarti...~Ketimpangan meningkat~Pemerataan membaik~Ekonomi menyusut~Inflasi turun~Gini makin besar berarti distribusi pendapatan makin timpang."],
+["C = 100 + 0,8Y dan I = 50. Pendapatan keseimbangan...~750~500~625~1.000~Y = C + I -> Y = 100 + 0,8Y + 50 -> 0,2Y = 150 -> Y = 750.",
+"Qd = 100 - 2P dan Qs = -20 + 4P. Harga keseimbangan...~20~15~25~30~100 - 2P = -20 + 4P -> 120 = 6P -> P = 20 (Q = 60).",
+"Dengan fungsi tadi, HET Rp15 menimbulkan...~Kelebihan permintaan 30~Kelebihan penawaran 30~Kelebihan permintaan 10~Seimbang~Qd = 100 - 30 = 70; Qs = -20 + 60 = 40; selisih 70 - 40 = 30.",
+"PDB nominal 1.200 dan riil 1.000. Deflator PDB...~120~83~200~1.000~Deflator = nominal / riil x 100 = 1.200 / 1.000 x 100 = 120.",
+"Trilemma kebijakan: tiga hal yang tak bisa dicapai bersamaan adalah...~Kurs tetap, modal bebas, moneter independen~Pajak, subsidi, ekspor~Inflasi, bunga, tabungan~Upah, sewa, laba~Mundell-Fleming: hanya dua dari tiga yang bisa dipilih.",
+"Kebijakan terbaik menurunkan ketimpangan sambil menjaga pertumbuhan...~Pajak progresif plus investasi pendidikan dan UMKM~Menghapus seluruh pajak~Memonopoli semua usaha~Menghentikan investasi~Redistribusi lewat pajak progresif dan peningkatan kapasitas masyarakat menjaga keadilan dan pertumbuhan.",
+"Pertumbuhan 5% tetapi pengangguran dan Gini naik menunjukkan...~Pertumbuhan kurang inklusif~Pertumbuhan sudah ideal~Terjadi deflasi~Ekonomi komando~Pertumbuhan tinggi belum berarti merata; keadilan sosial belum tercapai.",
+"Penerimaan pajak Rp1.800 T dan PDB Rp12.000 T. Tax ratio...~15%~6,7%~22%~10%~1.800 / 12.000 x 100% = 15%.",
+"Saat inflasi tinggi (overheating), kebijakan fiskal yang tepat adalah...~Kontraktif~Ekspansif~Mencetak uang~Menurunkan pajak~Kontraktif (menekan belanja/menaikkan pajak) mengurangi permintaan agregat sehingga harga reda.",
+"Sikap ekonomi Pancasila menghadapi globalisasi adalah...~Terbuka pada perdagangan global namun melindungi kepentingan nasional dan UMKM~Menutup diri total~Menyerahkan semua pada pasar bebas~Menghapus BUMN~Terbuka tetapi selektif demi kemandirian dan keadilan."]
+];
+const KLS=RAW.map((_,i)=>"X-"+(i+1)),LVL=["Pemula","Dasar","Dasar+","Menengah","Menengah+","Mahir","Mahir+","Pakar","Master"];
+const Q=RAW.map(l=>l.map(s=>{const p=s.split("~");return{q:p[0],o:[p[1],p[2],p[3],p[4]],e:p[5]}}));
+const $=id=>document.getElementById(id),app=$("app");
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const S={snd:true,voice:true,rows:[],db:null,user:null,teacher:false,filter:"all"};
+let AC;
+function beep(seq){if(!S.snd)return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();let t=AC.currentTime;seq.forEach(([f,d])=>{const o=AC.createOscillator(),g=AC.createGain();o.type="triangle";o.frequency.value=f;g.gain.setValueAtTime(.2,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d);t+=d*.9})}catch(e){}}
+const sfx={ok:()=>beep([[523,.12],[659,.12],[784,.25]]),no:()=>beep([[300,.2],[220,.3]]),click:()=>beep([[600,.06]]),win:()=>beep([[523,.12],[659,.12],[784,.12],[1046,.35]])};
+function say(t){try{speechSynthesis.cancel();if(!S.voice)return;const u=new SpeechSynthesisUtterance(t);u.lang="id-ID";u.rate=.95;speechSynthesis.speak(u)}catch(e){}}
+function tog(){return `<div class="flex gap-2 justify-end mb-2">
+<button class="btn bg-white text-sm" onclick="S.snd=!S.snd;sfx.click();R()">${S.snd?"🔊 Efek: ON":"🔇 Efek: OFF"}</button>
+<button class="btn bg-white text-sm" onclick="S.voice=!S.voice;if(!S.voice)speechSynthesis.cancel();R()">${S.voice?"🗣️ Suara: ON":"🤐 Suara: OFF"}</button></div>`}
+let G=null,view="start",first=true;
+function toast(t){sfx.no();const d=document.createElement("div");d.className="fixed left-3 right-3 z-50 bg-red-600 text-white rounded-2xl p-3 font-semibold pop text-center";d.style.top="calc(env(safe-area-inset-top,0px) + 12px)";d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),7000)}
+function flag(why){if(view!=="quiz"||!G||G.stop||Date.now()-G.lt<1500)return;G.lt=Date.now();G.cheat++;G.log.push(why);sfx.no();try{speechSynthesis.cancel()}catch(e){}
+const st=G.cheat>=3;if(st)G.stop=true;
+try{if(S.db)S.db.collection("results").doc(G.id).set({id:G.id,nama:G.n,kelas:KLS[G.k],skor:G.s,benar:G.ok,waktu:new Date().toISOString(),durasi:Math.round((Date.now()-G.t)/1000),curang:G.cheat,alasan:[...new Set(G.log)].join(", ")}).catch(()=>{})}catch(e){}
+const w=document.getElementById("wm");if(w)w.remove();const o=document.createElement("div");o.id="wm";o.className="fixed inset-0 z-50 flex items-center justify-center p-4";o.style.background="rgba(0,0,0,.65)";
+o.innerHTML=`<div class="card p-6 text-center pop max-w-sm"><div class="text-5xl">⚠️</div><h3 class="text-xl font-bold text-red-600 my-2">Peringatan ${G.cheat}/3</h3><p>Terdeteksi: <b>${why}</b>.<br>Ayo kerjakan sendiri dengan jujur ya! Catatan ini dikirim ke gurumu.</p>${st?"<p class='font-bold mt-2 text-red-600'>Batas pelanggaran tercapai, kuis dihentikan.</p>":""}<button class="btn bg-red-500 text-white mt-4" onclick="document.getElementById('wm').remove();${st?"finish()":""}">${st?"Lihat Hasil":"Saya mengerti"}</button></div>`;document.body.appendChild(o)}
+document.addEventListener("visibilitychange",()=>{if(document.hidden)flag("pindah tab atau aplikasi")});
+window.addEventListener("blur",()=>flag("keluar dari halaman kuis"));
+["copy","cut","paste"].forEach(e=>document.addEventListener(e,ev=>{if(view==="quiz"){ev.preventDefault();flag("menyalin atau menempel teks")}}));
+document.addEventListener("contextmenu",ev=>{if(view==="quiz"){ev.preventDefault();flag("klik kanan")}});
+document.addEventListener("keydown",ev=>{if(view==="quiz"&&(ev.ctrlKey||ev.metaKey)&&["c","v","x","u","s","p","f"].includes(ev.key.toLowerCase())){ev.preventDefault();flag("pintasan keyboard terlarang")}});
+function R(){({start:vStart,quiz:vQuiz,res:vRes,teach:vTeach})[view]()}
+function vStart(){
+app.innerHTML=tog()+`<div class="card p-6 pop text-center">
+<div class="text-6xl mb-2">🇮🇩💰</div>
+<h1 class="text-3xl font-bold text-purple-600">Kuis Ekonomi Indonesia</h1>
+<p class="text-slate-500 mb-4">Sistem Ekonomi dalam Perekonomian Indonesia</p>
+<input id="nm" maxlength="40" placeholder="Nama lengkapmu" class="w-full border-4 border-yellow-300 rounded-2xl p-3 mb-3 text-center font-semibold outline-none focus:border-purple-400">
+<select id="kl" class="w-full border-4 border-pink-300 rounded-2xl p-3 mb-4 text-center font-semibold bg-white">${KLS.map((k,i)=>`<option value="${i}">Kelas ${k} · Level ${LVL[i]}</option>`).join("")}</select>
+<p class="text-xs text-slate-500 mb-3">🛡️ Kuis diawasi. Pindah tab, menyalin soal, atau klik kanan akan dicatat dan guru diberi tahu.</p><button class="btn bg-gradient-to-r from-purple-500 to-pink-500 text-white w-full text-xl py-3" onclick="start()">🚀 Mulai Kuis!</button>
+<button class="mt-4 text-sm text-slate-500 underline" onclick="sfx.click();view='teach';R()">👩‍🏫 Dasbor Guru</button></div>`}
+function start(){const n=$("nm").value.trim();if(!n){$("nm").classList.add("border-red-400");$("nm").placeholder="Isi namamu dulu ya 😊";return}
+const k=+$("kl").value;G={n,k,i:0,s:0,ok:0,cheat:0,log:[],lt:0,id:Date.now()+"-"+Math.random().toString(36).slice(2,7),t:Date.now(),qs:Q[k].map(x=>{const c=x.o[0],o=x.o.slice().sort(()=>Math.random()-.5);return{q:x.q,o,a:o.indexOf(c),e:x.e}}),done:false};sfx.click();view="quiz";R()}
+function vQuiz(){const q=G.qs[G.i];G.done=false;
+app.innerHTML=tog()+`<div class="card p-5 pop"><div class="flex justify-between text-sm font-bold text-purple-600 mb-2"><span>Halo, ${esc(G.n)}! (${KLS[G.k]})</span><span>⭐ ${G.s}</span></div>
+<div class="h-3 bg-slate-200 rounded-full mb-4"><div class="h-3 rounded-full bg-gradient-to-r from-yellow-400 to-pink-500" style="width:${G.i*10}%"></div></div>
+<div class="text-sm text-slate-500 mb-1">Soal ${G.i+1} dari 10</div>
+<h2 class="text-xl font-bold mb-4">${esc(q.q)}</h2>
+${q.o.map((o,i)=>`<button class="opt" onclick="pick(${i})">${"ABCD"[i]}. ${esc(o)}</button>`).join("")}
+<button class="text-sm text-purple-600 underline" onclick="say(narr())">🔈 Bacakan lagi</button><div id="fb"></div></div>`;
+say(narr())}
+const narr=()=>{const q=G.qs[G.i];return "Soal "+(G.i+1)+". "+q.q+" "+q.o.map((o,i)=>"Pilihan "+"ABCD"[i]+". "+o).join(". ")};
+const PUJI=["Hebat sekali! 🎉","Keren, kamu jago! 🌟","Mantap, pertahankan! 💪","Luar biasa, otakmu encer! 🧠"],SEMANGAT=["Belum tepat, tapi kamu hebat sudah mencoba! 💛","Tidak apa-apa, salah itu bagian dari belajar! 🌱","Hampir! Yuk pelajari langkahnya! 🔍"];
+function pick(i){if(G.done)return;G.done=true;const q=G.qs[G.i],ok=i===q.a;if(ok){G.s+=10;G.ok++;sfx.ok()}else sfx.no();
+document.querySelectorAll(".opt").forEach((b,j)=>{b.disabled=true;if(j===q.a)b.style.cssText="border-color:#22c55e;background:#dcfce7";else if(j===i)b.style.cssText="border-color:#ef4444;background:#fee2e2"});
+const m=(ok?PUJI:SEMANGAT)[Math.floor(Math.random()*(ok?4:3))];
+$("fb").innerHTML=`<div class="pop mt-3 p-4 rounded-2xl ${ok?"bg-green-100":"bg-orange-100"}"><div class="font-bold text-lg">${m}</div>
+${ok?"":`<div class="mt-1"><b>Jawaban benar:</b> ${esc(q.o[q.a])}</div>`}
+<div class="mt-1"><b>${ok?"Cara mengerjakan":"Langkah penyelesaian yang benar"}:</b> ${esc(q.e)}</div></div>
+<button class="btn bg-purple-500 text-white w-full mt-3" onclick="next()">${G.i<9?"Lanjut ➡️":"Lihat Hasil 🏆"}</button>`;
+say(m.replace(/[^\w\s,!.]/g,"")+" "+(ok?"":"Jawaban benar: "+q.o[q.a]+". ")+q.e)}
+function next(){speechSynthesis.cancel();sfx.click();if(G.i<9){G.i++;vQuiz()}else{finish()}}
+async function finish(){view="res";sfx.win();const r={id:G.id,nama:G.n,kelas:KLS[G.k],skor:G.s,benar:G.ok,waktu:new Date().toISOString(),durasi:Math.round((Date.now()-G.t)/1000),curang:G.cheat,alasan:[...new Set(G.log)].join(", ")};
+let saved=false;try{if(S.db){await S.db.collection("results").doc(r.id).set(r);saved=true}}catch(e){}
+if(!saved)S.rows.push(r);G.saved=saved;R()}
+function vRes(){const s=G.s,m=s>=80?"Luar biasa! Kamu bintang ekonomi! 🌟":s>=60?"Bagus sekali, terus berlatih! 👏":"Tetap semangat, ulangi lagi supaya makin paham! 💪";
+app.innerHTML=tog()+`<div class="card p-6 text-center pop"><div class="text-6xl">${s>=80?"🏆":s>=60?"🥈":"🌱"}</div><h2 class="text-2xl font-bold text-purple-600">Selesai, ${esc(G.n)}!</h2>
+<div class="text-6xl font-bold my-3 text-pink-500">${s}</div><p>Benar ${G.ok} dari 10 · Kelas ${KLS[G.k]}</p><p class="mt-2 font-semibold">${m}</p>${G.cheat?`<p class="mt-2 text-red-600 text-sm font-semibold">⚠️ Tercatat ${G.cheat} pelanggaran (${esc([...new Set(G.log)].join(", "))}). Guru dapat melihat catatan ini.</p>`:""}
+<p class="text-xs text-slate-400 mt-2">${G.saved?"✅ Nilai tersimpan ke database guru":"⚠️ Database tidak tersambung, nilai hanya tersimpan di perangkat ini"}</p>
+<button class="btn bg-gradient-to-r from-purple-500 to-pink-500 text-white w-full mt-4" onclick="view='start';R()">🔁 Main Lagi</button></div>`;say(m.replace(/[^\w\s,!.]/g,"")+" Skormu "+s)}
+let unsub=null;
+async function vTeach(){
+if(!S.teacher){const own=S.user&&S.user.isOwner&&S.user.isOwner();if(own)S.teacher=true;else{app.innerHTML=`<div class="card p-6 text-center pop"><h2 class="text-xl font-bold mb-3">👩‍🏫 Dasbor Guru</h2><input id="pin" type="password" placeholder="PIN guru" class="border-4 border-yellow-300 rounded-2xl p-3 text-center w-full mb-3"><button class="btn bg-purple-500 text-white w-full" onclick="if($('pin').value==='guru123'){S.teacher=true;vTeach()}else{$('pin').value='';$('pin').placeholder='PIN salah'}">Masuk</button><button class="mt-3 text-sm underline" onclick="view='start';R()">← Kembali</button><p class="text-xs text-slate-400 mt-3">PIN bawaan: guru123 (pemilik halaman otomatis masuk)</p></div>`;return}}
+if(S.db&&!unsub){try{unsub=S.db.collection("results").onSnapshot(sn=>{if(!first)sn.docChanges().forEach(c=>{const d=c.doc.data();if(c.type==="added"&&d.curang>0)toast("🚨 "+d.nama+" ("+d.kelas+") terindikasi mencontek: "+(d.alasan||""))});first=false;S.rows=sn.docs.map(d=>d.data());if(view==="teach")drawT()})}catch(e){}}
+drawT()}
+const rowsF=()=>S.rows.filter(r=>(S.filter==="all"||r.kelas===S.filter)&&(!S.flag||r.curang>0)).sort((a,b)=>b.waktu.localeCompare(a.waktu));
+function drawT(){const fl=S.rows.filter(r=>r.curang>0),rs=rowsF(),avg=rs.length?(rs.reduce((a,r)=>a+r.skor,0)/rs.length).toFixed(1):"-";
+app.innerHTML=`<div class="card p-4 pop"><div class="flex justify-between items-center mb-3"><h2 class="text-xl font-bold">👩‍🏫 Rekap Nilai <span class="text-xs text-green-600">● ${S.db?"real-time":"lokal"}</span></h2><button class="underline text-sm" onclick="view='start';R()">← Kuis</button></div>
+<div class="grid grid-cols-3 gap-2 text-center mb-3"><div class="bg-yellow-100 rounded-2xl p-2"><div class="text-2xl font-bold">${rs.length}</div><div class="text-xs">Peserta</div></div><div class="bg-pink-100 rounded-2xl p-2"><div class="text-2xl font-bold">${avg}</div><div class="text-xs">Rata-rata</div></div><div class="bg-cyan-100 rounded-2xl p-2"><div class="text-2xl font-bold">${rs.length?Math.max(...rs.map(r=>r.skor)):"-"}</div><div class="text-xs">Tertinggi</div></div></div>
+${fl.length?`<div class="bg-red-500 text-white rounded-2xl p-3 mb-3 font-semibold">🚨 ${fl.length} siswa terindikasi mencontek: ${fl.slice(0,5).map(r=>esc(r.nama)+" ("+esc(r.kelas)+")").join(", ")}${fl.length>5?" dst.":""}</div>`:`<div class="bg-green-100 rounded-2xl p-3 mb-3 text-sm">✅ Belum ada indikasi mencontek</div>`}<select class="border-2 rounded-xl p-2 mb-3" onchange="S.filter=this.value;drawT()"><option value="all">Semua kelas</option>${KLS.map(k=>`<option ${S.filter===k?"selected":""}>${k}</option>`).join("")}</select>
+<label class="ml-2 text-sm"><input type="checkbox" ${S.flag?"checked":""} onchange="S.flag=this.checked;drawT()"> Hanya yang terindikasi</label><div class="flex gap-2 mb-3 flex-wrap"><button class="btn bg-green-500 text-white text-sm" onclick="exp('xlsx')">📗 Excel</button><button class="btn bg-red-500 text-white text-sm" onclick="exp('pdf')">📕 PDF</button><button class="btn bg-blue-500 text-white text-sm" onclick="exp('doc')">📘 Word</button></div><div id="msg" class="text-xs text-red-500"></div>
+<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="bg-purple-100 text-left"><th class="p-2">Nama</th><th>Kelas</th><th>Skor</th><th>Benar</th><th>Waktu</th><th>Pelanggaran</th></tr></thead><tbody>${rs.map(r=>`<tr class="border-b ${r.curang>0?"bg-red-100":""}"><td class="p-2">${r.curang>0?"🚨 ":""}${esc(r.nama)}</td><td>${esc(r.kelas)}</td><td class="font-bold">${r.skor}</td><td>${r.benar}/10</td><td>${new Date(r.waktu).toLocaleString("id-ID")}</td><td>${r.curang>0?`<b class="text-red-600">${r.curang}x</b> ${esc(r.alasan||"")}`:"-"}</td></tr>`).join("")||`<tr><td colspan="6" class="p-4 text-center text-slate-400">Belum ada data</td></tr>`}</tbody></table></div></div>`}
+async function exp(t){const rs=rowsF(),H=["No","Nama","Kelas","Skor","Benar","Waktu","Pelanggaran"],B=rs.map((r,i)=>[i+1,r.nama,r.kelas,r.skor,r.benar+"/10",new Date(r.waktu).toLocaleString("id-ID"),r.curang>0?r.curang+"x: "+(r.alasan||""):"-"]);let data,fn="rekap-kuis-ekonomi";
+try{if(t==="xlsx"){const ws=XLSX.utils.aoa_to_sheet([H,...B]),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Rekap");data=new Uint8Array(XLSX.write(wb,{type:"array",bookType:"xlsx"}));fn+=".xlsx"}
+else if(t==="pdf"){const d=new jspdf.jsPDF();d.text("Rekap Nilai Kuis Ekonomi Indonesia",14,15);d.autoTable({head:[H],body:B,startY:22});data=new Uint8Array(d.output("arraybuffer"));fn+=".pdf"}
+else{data=new Blob(["<html><head><meta charset='utf-8'></head><body><h2>Rekap Nilai Kuis Ekonomi Indonesia</h2><table border='1' cellpadding='4'><tr>"+H.map(h=>"<th>"+h+"</th>").join("")+"</tr>"+B.map(r=>"<tr>"+r.map(c=>"<td>"+esc(c)+"</td>").join("")+"</tr>").join("")+"</table></body></html>"],{type:"application/msword"});fn+=".doc"}
+const dl=await claude.use("downloads");if(!dl)throw 0;await dl.save({filename:fn,data})}catch(e){$("msg").textContent="Unduhan gagal atau dibatalkan"+(e&&e.message?": "+e.message:"")}}
+(async()=>{try{S.db=await claude.use("db")}catch(e){}try{S.user=await claude.use("user")}catch(e){}R()})();
+R();
+</script></body></html>
